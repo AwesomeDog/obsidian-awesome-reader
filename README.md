@@ -25,6 +25,33 @@ You may want to toggle on `Detect all file extensions` first in `options -> File
 
 - Reading progress of pdf format is not fully implemented now
 
+## Development
+
+Install dependencies, build the production bundle, and optionally copy it directly into a local vault:
+
+```bash
+npm install
+npm run build
+npm run deploy -- "/path/to/vault"
+```
+
+The deploy command copies `main.js`, `manifest.json`, and `styles.css` into `.obsidian/plugins/awesome-reader/`.
+After deployment, enable **Awesome Reader** in Obsidian. Reload the plugin after source changes; restart Obsidian after
+changing `manifest.json`.
+
+## Release
+
+Before releasing, update the version in `package.json`, `manifest.json`, and `versions.json`. Create an annotated tag
+whose name exactly matches the version in `manifest.json` (do not add a `v` prefix):
+
+```bash
+git tag -a 0.1.5 -m "0.1.5"
+git push origin 0.1.5
+```
+
+Pushing the tag starts the release workflow. It checks the version, builds the plugin, attaches `main.js`,
+`manifest.json`, and `styles.css`, and creates a draft GitHub release for review and publication.
+
 ## Attribution
 
 Special thanks to caronchen's

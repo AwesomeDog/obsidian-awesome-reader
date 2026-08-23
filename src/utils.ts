@@ -1,7 +1,8 @@
 import {App, loadPdfJs, TFile, WorkspaceLeaf} from "obsidian";
 
 export async function openOrCreateNote(app: App, file: TFile, toc: string) {
-	const noteFilename = `${file.parent.path}/${file.basename}.md`;
+	const parentPath = file.parent?.path;
+	const noteFilename = parentPath ? `${parentPath}/${file.basename}.md` : `${file.basename}.md`;
 
 	let noteFile = app.vault.getAbstractFileByPath(noteFilename);
 	if (noteFile == null || !(noteFile instanceof TFile)) {

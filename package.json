@@ -9,6 +9,7 @@
 		"dev": "node esbuild.config.mjs",
 		"build": "npm run clean && tsc -noEmit -skipLibCheck && node esbuild.config.mjs production && npm run rename_css",
 		"release": "npm run build && mkdir build && shx cp main.js styles.css manifest.json build",
+		"deploy": "node scripts/deploy.mjs",
 		"version": "node version-bump.mjs && git add manifest.json versions.json"
 	},
 	"keywords": [],

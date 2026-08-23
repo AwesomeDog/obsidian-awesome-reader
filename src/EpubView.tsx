@@ -73,18 +73,20 @@ export class EpubView extends FileView {
 				.setTitle("Open/create book note")
 				.setIcon("document")
 				.onClick(async () => {
-					await openOrCreateNote(this.app, this.file, getEpubTocMd(this.fileToc));
+					const file = this.file;
+					if (!file) return;
+					await openOrCreateNote(this.app, file, getEpubTocMd(this.fileToc));
 				});
 		});
 	}
 
-	async setInitLocation(initLocation: string | number) {
-		this.plugin.settings.bookInitLocations[this.file.path] = initLocation;
+	async setInitLocation(file: TFile, initLocation: string | number) {
+		this.plugin.settings.bookInitLocations[file.path] = initLocation;
 		await this.plugin.saveSettings();
 	}
 
-	async getInitLocation() {
-		const location = this.plugin.settings.bookInitLocations[this.file.path];
+	async getInitLocation(file: TFile) {
+		const location = this.plugin.settings.bookInitLocations[file.path];
 		return location ? location : null;
 	}
 
@@ -106,9 +108,9 @@ export class EpubView extends FileView {
 				scrolled={this.settings.scrolledView}
 				tocOffset={tocOffset}
 				// @ts-ignore
-				initLocation={await this.getInitLocation()}
+				initLocation={await this.getInitLocation(file)}
 				saveLocation={(location: string | number) => {
-					this.setInitLocation(location);
+					this.setInitLocation(file, location);
 				}}
 				tocMemo={(toc: any) => {
 					this.fileToc = toc;
