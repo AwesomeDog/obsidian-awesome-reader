@@ -5,7 +5,20 @@ import {getPdfTocMd, openOrCreateNote} from "./utils";
 
 export interface AwesomeReaderPluginSettings {
 	scrolledView: boolean;
-	bookInitLocations: Record<string, string | number>;
+	bookInitLocations: Record<string, string>;
+}
+
+export interface EpubLayoutCache {
+	width: number;
+	height: number;
+}
+
+// Reading CFIs live in synced plugin data; layout dimensions are device-local.
+const EPUB_LAYOUT_CACHE_PREFIX = "awesome-reader:epub-layout:";
+const EPUB_CFI_PATTERN = /^epubcfi\(\/\d+\/\d+(?:\[[^\]]*\])?(?:!\/[^)]+)?\)$/;
+
+export function isEpubCfi(value: unknown): value is string {
+	return typeof value === "string" && EPUB_CFI_PATTERN.test(value);
 }
 
 const DEFAULT_SETTINGS: AwesomeReaderPluginSettings = {
@@ -15,6 +28,7 @@ const DEFAULT_SETTINGS: AwesomeReaderPluginSettings = {
 
 export default class AwesomeReaderPlugin extends Plugin {
 	settings: AwesomeReaderPluginSettings;
+	private settingsSavePromise: Promise<void> = Promise.resolve();
 
 	async onload() {
 		await this.loadSettings();
@@ -59,11 +73,35 @@ export default class AwesomeReaderPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		const loaded = await this.loadData() as Partial<AwesomeReaderPluginSettings> | null;
+		const bookInitLocations: Record<string, string> = {};
+		for (const [path, location] of Object.entries(loaded?.bookInitLocations ?? {})) {
+			if (isEpubCfi(location)) bookInitLocations[path] = location;
+		}
+		this.settings = {
+			...DEFAULT_SETTINGS,
+			...loaded,
+			bookInitLocations,
+		};
 	}
 
 	async saveSettings() {
-		await this.saveData(this.settings);
+		this.settingsSavePromise = this.settingsSavePromise
+			.catch(() => undefined)
+			.then(() => this.saveData(this.settings));
+		await this.settingsSavePromise;
+	}
+
+	getEpubLayoutCache(path: string): EpubLayoutCache | null {
+		const raw = this.app.loadLocalStorage(`${EPUB_LAYOUT_CACHE_PREFIX}${encodeURIComponent(path)}`) as Partial<EpubLayoutCache> | null;
+		const width = raw?.width;
+		const height = raw?.height;
+		if (typeof width !== "number" || typeof height !== "number" || !Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return null;
+		return {width, height};
+	}
+
+	saveEpubLayoutCache(path: string, cache: EpubLayoutCache) {
+		this.app.saveLocalStorage(`${EPUB_LAYOUT_CACHE_PREFIX}${encodeURIComponent(path)}`, cache);
 	}
 }
 
