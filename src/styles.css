@@ -1,11 +1,10 @@
-/*
+.awesome-reader-epub {
+	border: none;
+	height: 100%;
+	overflow: hidden;
+	width: 100%;
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
-
-If your plugin does not need CSS, delete this file.
-
-*/
-.is-mobile div.awesome-reader-epub button {
+.is-mobile .awesome-reader-epub button {
 	width: auto !important;
 }

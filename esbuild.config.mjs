@@ -1,6 +1,6 @@
 import esbuild from "esbuild";
-import process from "process";
-import builtins from 'builtin-modules'
+import {rm} from "node:fs/promises";
+import {builtinModules} from "node:module";
 
 const banner =
 `/*
@@ -9,34 +9,33 @@ if you want to view the source, please visit the github repository of this plugi
 */
 `;
 
-const prod = (process.argv[2] === 'production');
+const prod = process.argv[2] === "production";
 
-esbuild.build({
-	banner: {
-		js: banner,
-	},
-	entryPoints: ['src/main.ts'],
+if (prod) {
+	await Promise.all(["main.js", "styles.css", "build"].map(path => rm(path, {force: true, recursive: true})));
+}
+
+const context = await esbuild.context({
+	banner: {js: banner},
+	entryPoints: {main: "src/main.ts", styles: "src/styles.css"},
 	bundle: true,
 	external: [
-		'obsidian',
-		'electron',
-		'@codemirror/autocomplete',
-		'@codemirror/collab',
-		'@codemirror/commands',
-		'@codemirror/language',
-		'@codemirror/lint',
-		'@codemirror/search',
-		'@codemirror/state',
-		'@codemirror/view',
-		'@lezer/common',
-		'@lezer/highlight',
-		'@lezer/lr',
-		...builtins],
-	format: 'cjs',
-	watch: !prod,
-	target: 'es2018',
+		"obsidian", "electron", "@codemirror/*", "@lezer/*",
+		...builtinModules,
+	],
+	format: "cjs",
+	target: "es2022",
 	logLevel: "info",
-	sourcemap: prod ? false : 'inline',
+	sourcemap: prod ? false : "inline",
 	treeShaking: true,
-	outfile: 'main.js',
-}).catch(() => process.exit(1));
+	minify: prod,
+	outdir: ".",
+	entryNames: "[name]",
+});
+
+if (prod) {
+	await context.rebuild();
+	await context.dispose();
+} else {
+	await context.watch();
+}

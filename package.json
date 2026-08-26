@@ -2,36 +2,46 @@
 	"name": "obsidian-awesome-reader",
 	"version": "0.1.5",
 	"description": "Make Obsidian a proper Reader.",
+	"private": true,
+	"type": "module",
 	"main": "main.js",
 	"scripts": {
-		"clean": "del-cli -f main.js styles.css data.json build",
-		"rename_css": "node -e \"require('fs').rename('main.css', 'styles.css', function(err) { if (err) console.log(err); console.log('File successfully renamed!') })\"",
 		"dev": "node esbuild.config.mjs",
-		"build": "npm run clean && tsc -noEmit -skipLibCheck && node esbuild.config.mjs production && npm run rename_css",
-		"release": "npm run build && mkdir build && shx cp main.js styles.css manifest.json build",
+		"build": "npm run check && node esbuild.config.mjs production",
+		"check": "npm run typecheck && npm run lint && npm test",
+		"typecheck": "tsc",
+		"lint": "eslint .",
+		"test": "node --test --experimental-strip-types test/*.test.ts",
+		"release": "npm run build && node scripts/deploy.mjs --build",
 		"deploy": "node scripts/deploy.mjs",
 		"version": "node version-bump.mjs && git add manifest.json versions.json"
 	},
-	"keywords": [],
-	"author": "",
+	"keywords": ["obsidian", "epub", "pdf", "reader"],
+	"author": "AwesomeDog",
 	"license": "MIT",
+	"repository": "github:AwesomeDog/obsidian-awesome-reader",
+	"engines": {
+		"node": ">=24"
+	},
 	"devDependencies": {
-		"@types/node": "^16.11.6",
-		"@typescript-eslint/eslint-plugin": "5.29.0",
-		"@typescript-eslint/parser": "5.29.0",
-		"@types/react": "^18.0.8",
-		"@types/react-dom": "^18.0.3",
-		"builtin-modules": "3.3.0",
-		"esbuild": "0.14.47",
-		"obsidian": "latest",
-		"tslib": "2.4.0",
-		"typescript": "4.7.4"
+		"@eslint/js": "10.0.1",
+		"@types/node": "26.3.0",
+		"@types/react": "19.2.18",
+		"@types/react-dom": "19.2.5",
+		"esbuild": "0.28.2",
+		"eslint": "10.9.1",
+		"globals": "17.11.0",
+		"obsidian": "1.13.1",
+		"typescript": "6.0.3",
+		"typescript-eslint": "8.68.0"
 	},
 	"dependencies": {
-		"react": "18.2.0",
-		"react-dom": "18.2.0",
-		"react-reader": "^1.0.2",
-		"del-cli": "^4.0.1",
-		"shx": "^0.3.4"
+		"epubjs": "0.3.93",
+		"react": "19.2.8",
+		"react-dom": "19.2.8",
+		"react-reader": "2.0.15"
+	},
+	"overrides": {
+		"@xmldom/xmldom": "0.9.12"
 	}
 }

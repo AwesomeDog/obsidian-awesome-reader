@@ -31,7 +31,7 @@ jobs:
 
       - name: Build plugin
         run: |
-          npm install
+          npm install --ignore-scripts --no-audit --no-fund
           npm run build
 
       - name: Generate artifact attestation

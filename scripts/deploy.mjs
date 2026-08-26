@@ -1,14 +1,16 @@
 import { access, copyFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 
-const vault = process.argv[2] || process.env.OBSIDIAN_VAULT;
+const destination = process.argv[2] || process.env.OBSIDIAN_VAULT;
 
-if (!vault) {
+if (!destination) {
 	console.error("Usage: npm run deploy -- <vault-path>");
 	process.exitCode = 1;
 } else {
 	const root = process.cwd();
-	const target = path.join(vault, ".obsidian", "plugins", "awesome-reader");
+	const target = destination === "--build"
+		? path.join(root, "build")
+		: path.join(destination, ".obsidian", "plugins", "awesome-reader");
 	const files = ["main.js", "manifest.json", "styles.css"];
 
 	await Promise.all(files.map((file) => access(path.join(root, file))));
