@@ -29,6 +29,32 @@ const warn = (action: string, error: unknown): void => {
 	console.warn(`awesome-reader: failed to ${action}`, error);
 };
 
+const EPUB_LIGHT_THEME = {
+	"html, body": {
+		"background-color": "#ffffff !important",
+		color: "#222222 !important",
+	},
+	"a, a:visited": {
+		color: "#0969da !important",
+	},
+	"pre, code, blockquote": {
+		"background-color": "#f6f8fa !important",
+	},
+};
+
+const EPUB_DARK_THEME = {
+	"html, body": {
+		"background-color": "#1e1e1e !important",
+		color: "#d6d6d6 !important",
+	},
+	"a, a:visited": {
+		color: "#8ab4f8 !important",
+	},
+	"pre, code, blockquote": {
+		"background-color": "#252525 !important",
+	},
+};
+
 export function EpubReader({
 	contents, title, scrolled, tocOffset, initLocation, saveLocation, tocMemo, onRendition,
 }: EpubReaderProps) {
@@ -53,16 +79,34 @@ export function EpubReader({
 				: {allowPopups: false}}
 			readerStyles={{
 				...ReactReaderStyle,
+				readerArea: {
+					...ReactReaderStyle.readerArea,
+					backgroundColor: "var(--background-primary)",
+				},
+				titleArea: {
+					...ReactReaderStyle.titleArea,
+					color: "var(--text-muted)",
+				},
+				arrow: {
+					...ReactReaderStyle.arrow,
+					color: "var(--text-muted)",
+				},
 				tocArea: {
 					...ReactReaderStyle.tocArea,
 					top: `${tocOffset + 20}px`,
 					bottom: 0,
 					left: "auto",
-					backgroundColor: "currentColor",
+					background: "var(--background-secondary)",
+					backgroundColor: "var(--background-secondary)",
+				},
+				tocAreaButton: {
+					...ReactReaderStyle.tocAreaButton,
+					color: "var(--text-normal)",
+					borderBottomColor: "var(--background-modifier-border)",
 				},
 				tocButtonExpanded: {
 					...ReactReaderStyle.tocButtonExpanded,
-					backgroundColor: "currentColor",
+					backgroundColor: "var(--background-secondary)",
 				},
 			}}
 		/>
@@ -87,6 +131,15 @@ export class EpubView extends FileView {
 		super(leaf);
 		this.#settings = settings;
 		this.#plugin = plugin;
+		this.registerEvent(this.app.workspace.on("css-change", () => this.syncTheme()));
+	}
+
+	syncTheme(): void {
+		const rendition = this.#rendition;
+		if (!rendition) return;
+		const dark = this.#settings.epubTheme === "dark"
+			|| (this.#settings.epubTheme === "follow" && document.body.classList.contains("theme-dark"));
+		rendition.themes.select(dark ? "awesome-dark" : "awesome-light");
 	}
 
 	#scheduleLocationSave(file: TFile, cfi: string): void {
@@ -293,6 +346,9 @@ export class EpubView extends FileView {
 				if (loadId !== this.#loadId) return;
 				this.#rendition = rendition;
 				this.#readerFile = file;
+				rendition.themes.register("awesome-light", EPUB_LIGHT_THEME);
+				rendition.themes.register("awesome-dark", EPUB_DARK_THEME);
+				this.syncTheme();
 				this.#prepareRendition(rendition, file, loadId, initLocation);
 				this.onResize();
 			}}

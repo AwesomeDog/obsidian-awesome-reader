@@ -5,8 +5,11 @@ import {addBookNoteMenuItem, getPdfTocMd, openOrCreateNote} from "./utils";
 
 export {isEpubCfi};
 
+export type EpubThemeMode = "follow" | "light" | "dark";
+
 export interface AwesomeReaderPluginSettings {
 	scrolledView: boolean;
+	epubTheme: EpubThemeMode;
 	bookInitLocations: Record<string, string>;
 }
 
@@ -17,8 +20,15 @@ export interface EpubLayoutCache {
 
 const VIEW_TYPE_EPUB = "epub";
 const EPUB_LAYOUT_CACHE_PREFIX = "awesome-reader:epub-layout:";
-const DEFAULT_SETTINGS: AwesomeReaderPluginSettings = {scrolledView: false, bookInitLocations: {}};
+const DEFAULT_SETTINGS: AwesomeReaderPluginSettings = {
+	scrolledView: false,
+	epubTheme: "follow",
+	bookInitLocations: {},
+};
 const layoutCacheKey = (path: string): string => `${EPUB_LAYOUT_CACHE_PREFIX}${encodeURIComponent(path)}`;
+
+const isEpubThemeMode = (value: unknown): value is EpubThemeMode =>
+	value === "follow" || value === "light" || value === "dark";
 
 export default class AwesomeReaderPlugin extends Plugin {
 	override settings: AwesomeReaderPluginSettings = {...DEFAULT_SETTINGS, bookInitLocations: {}};
@@ -47,7 +57,12 @@ export default class AwesomeReaderPlugin extends Plugin {
 		for (const [path, location] of Object.entries(loaded?.bookInitLocations ?? {})) {
 			if (isEpubCfi(location)) bookInitLocations[path] = location;
 		}
-		this.settings = {...DEFAULT_SETTINGS, ...loaded, bookInitLocations};
+		this.settings = {
+			...DEFAULT_SETTINGS,
+			...loaded,
+			epubTheme: isEpubThemeMode(loaded?.epubTheme) ? loaded.epubTheme : DEFAULT_SETTINGS.epubTheme,
+			bookInitLocations,
+		};
 	}
 
 	saveSettings(): Promise<void> {
@@ -55,6 +70,12 @@ export default class AwesomeReaderPlugin extends Plugin {
 			.catch(() => undefined)
 			.then(() => this.saveData(this.settings));
 		return this.#settingsSavePromise;
+	}
+
+	refreshEpubThemes(): void {
+		for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_EPUB)) {
+			if (leaf.view instanceof EpubView) leaf.view.syncTheme();
+		}
 	}
 
 	getEpubLayoutCache(path: string): EpubLayoutCache | null {
@@ -89,6 +110,20 @@ class AwesomeReaderSettingTab extends PluginSettingTab {
 				.onChange(async value => {
 					this.#plugin.settings.scrolledView = value;
 					await this.#plugin.saveSettings();
+				}));
+		new Setting(this.containerEl)
+			.setName("EPUB Theme")
+			.setDesc("Choose whether EPUB books follow Obsidian's theme.")
+			.addDropdown(dropdown => dropdown
+				.addOption("follow", "Follow Obsidian")
+				.addOption("light", "Light")
+				.addOption("dark", "Dark")
+				.setValue(this.#plugin.settings.epubTheme)
+				.onChange(async value => {
+					if (!isEpubThemeMode(value)) return;
+					this.#plugin.settings.epubTheme = value;
+					await this.#plugin.saveSettings();
+					this.#plugin.refreshEpubThemes();
 				}));
 	}
 }
