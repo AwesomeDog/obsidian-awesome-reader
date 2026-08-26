@@ -1,4 +1,4 @@
-import {Plugin, PluginSettingTab, Setting, TFile, type App} from "obsidian";
+import {Plugin, PluginSettingTab, Setting, TFile, type App, type SettingDefinitionItem} from "obsidian";
 import {isEpubCfi} from "./core";
 import {EpubView} from "./EpubView";
 import {addBookNoteMenuItem, getPdfTocMd, openOrCreateNote} from "./utils";
@@ -13,20 +13,12 @@ export interface AwesomeReaderPluginSettings {
 	bookInitLocations: Record<string, string>;
 }
 
-export interface EpubLayoutCache {
-	width: number;
-	height: number;
-}
-
 const VIEW_TYPE_EPUB = "epub";
-const EPUB_LAYOUT_CACHE_PREFIX = "awesome-reader:epub-layout:";
 const DEFAULT_SETTINGS: AwesomeReaderPluginSettings = {
 	scrolledView: false,
 	epubTheme: "follow",
 	bookInitLocations: {},
 };
-const layoutCacheKey = (path: string): string => `${EPUB_LAYOUT_CACHE_PREFIX}${encodeURIComponent(path)}`;
-
 const isEpubThemeMode = (value: unknown): value is EpubThemeMode =>
 	value === "follow" || value === "light" || value === "dark";
 
@@ -78,17 +70,6 @@ export default class AwesomeReaderPlugin extends Plugin {
 		}
 	}
 
-	getEpubLayoutCache(path: string): EpubLayoutCache | null {
-		const raw = this.app.loadLocalStorage(layoutCacheKey(path)) as Partial<EpubLayoutCache> | null;
-		const {width, height} = raw ?? {};
-		if (typeof width !== "number" || typeof height !== "number"
-			|| !Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return null;
-		return {width, height};
-	}
-
-	saveEpubLayoutCache(path: string, cache: EpubLayoutCache): void {
-		this.app.saveLocalStorage(layoutCacheKey(path), cache);
-	}
 }
 
 class AwesomeReaderSettingTab extends PluginSettingTab {
@@ -101,7 +82,8 @@ class AwesomeReaderSettingTab extends PluginSettingTab {
 
 	override display(): void {
 		this.containerEl.empty();
-		this.containerEl.createEl("h2", {text: "Awesome Reader Settings"});
+		const heading = new Setting(this.containerEl).setName("Awesome Reader Settings");
+		if (typeof heading.setHeading === "function") heading.setHeading();
 		new Setting(this.containerEl)
 			.setName("Scrolled View")
 			.setDesc("This enables seamless scrolling between pages.")
@@ -125,5 +107,43 @@ class AwesomeReaderSettingTab extends PluginSettingTab {
 					await this.#plugin.saveSettings();
 					this.#plugin.refreshEpubThemes();
 				}));
+	}
+
+	override getSettingDefinitions(): SettingDefinitionItem[] {
+		return [{
+			type: "group",
+			heading: "Awesome Reader Settings",
+			items: [
+				{
+					name: "Scrolled View",
+					desc: "This enables seamless scrolling between pages.",
+					render: setting => {
+						setting.addToggle(toggle => toggle
+							.setValue(this.#plugin.settings.scrolledView)
+							.onChange(async value => {
+								this.#plugin.settings.scrolledView = value;
+								await this.#plugin.saveSettings();
+							}));
+					},
+				},
+				{
+					name: "EPUB Theme",
+					desc: "Choose whether EPUB books follow Obsidian's theme.",
+					render: setting => {
+						setting.addDropdown(dropdown => dropdown
+							.addOption("follow", "Follow Obsidian")
+							.addOption("light", "Light")
+							.addOption("dark", "Dark")
+							.setValue(this.#plugin.settings.epubTheme)
+							.onChange(async value => {
+								if (!isEpubThemeMode(value)) return;
+								this.#plugin.settings.epubTheme = value;
+								await this.#plugin.saveSettings();
+								this.#plugin.refreshEpubThemes();
+							}));
+					},
+				},
+			],
+		}];
 	}
 }

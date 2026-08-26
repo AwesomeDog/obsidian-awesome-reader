@@ -221,14 +221,6 @@ export class EpubView extends FileView {
 			warn("resize EPUB reader", error);
 			return;
 		}
-		try {
-			const cached = this.#plugin.getEpubLayoutCache(file.path);
-			if (cached?.width !== width || cached.height !== height) {
-				this.#plugin.saveEpubLayoutCache(file.path, {width, height});
-			}
-		} catch (error) {
-			warn("save EPUB layout cache", error);
-		}
 	}
 
 	override onResize(): void {

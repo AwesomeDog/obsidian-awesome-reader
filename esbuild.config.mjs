@@ -1,6 +1,7 @@
 import esbuild from "esbuild";
 import {rm} from "node:fs/promises";
 import {builtinModules} from "node:module";
+import path from "node:path";
 
 const banner =
 `/*
@@ -19,6 +20,12 @@ const context = await esbuild.context({
 	banner: {js: banner},
 	entryPoints: {main: "src/main.ts", styles: "src/styles.css"},
 	bundle: true,
+	alias: {
+		"lie": path.resolve("src/native-promise.ts"),
+		"localforage": path.resolve("src/no-op-localforage.ts"),
+		"jszip/dist/jszip": "jszip/lib/index.js",
+		"setimmediate": path.resolve("src/set-immediate.ts"),
+	},
 	external: [
 		"obsidian", "electron", "@codemirror/*", "@lezer/*",
 		...builtinModules,
