@@ -1,7 +1,7 @@
 {
 	"id": "awesome-reader",
 	"name": "Awesome Reader",
-	"version": "0.1.5",
+	"version": "0.1.6",
 	"minAppVersion": "1.8.7",
 	"description": "Make Obsidian a proper Reader.",
 	"author": "AwesomeDog",

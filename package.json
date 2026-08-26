@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-awesome-reader",
-	"version": "0.1.5",
+	"version": "0.1.6",
 	"description": "Make Obsidian a proper Reader.",
 	"private": true,
 	"type": "module",
@@ -16,7 +16,12 @@
 		"deploy": "node scripts/deploy.mjs",
 		"version": "node version-bump.mjs && git add manifest.json versions.json"
 	},
-	"keywords": ["obsidian", "epub", "pdf", "reader"],
+	"keywords": [
+		"obsidian",
+		"epub",
+		"pdf",
+		"reader"
+	],
 	"author": "AwesomeDog",
 	"license": "MIT",
 	"repository": "github:AwesomeDog/obsidian-awesome-reader",
